@@ -4,11 +4,11 @@ import ProfileForm from '@/components/ProfileForm';
 import JobListing from '@/components/JobListing';
 import AnimatedBackground from '@/components/AnimatedBackground';
 import { useJobContext } from '@/context/JobContext';
-import { JobProvider } from '@/context/JobContext';
 import { Button } from '@/components/ui/button';
 import { Search, Briefcase, X, Moon, Sun, Loader2, MapPin, AlertTriangle } from 'lucide-react';
 import { Toggle } from '@/components/ui/toggle';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Link } from 'react-router-dom';
 
 const JobBoard: React.FC = () => {
   const { 
@@ -72,6 +72,15 @@ const JobBoard: React.FC = () => {
             ? "Create your profile to unlock personalized job recommendations tailored to your skills and preferences."
             : `Based on your skills: ${userProfile?.skills.join(', ')}`}
         </p>
+        
+        <div className="mt-4">
+          <Link to="/indeed-jobs">
+            <Button variant="outline" className="mt-2">
+              <Search className="mr-2 h-4 w-4" />
+              Search Indeed Jobs Live
+            </Button>
+          </Link>
+        </div>
       </div>
       
       <div className="flex justify-center">

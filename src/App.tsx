@@ -8,6 +8,7 @@ import { JobProvider } from "./context/JobContext";
 import Index from "./pages/Index";
 import JobDetail from "./pages/JobDetail";
 import JobApplication from "./pages/JobApplication";
+import IndeedJobSearch from "./pages/IndeedJobSearch";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +24,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/job/:id" element={<JobDetail />} />
             <Route path="/job/:id/apply" element={<JobApplication />} />
+            <Route path="/indeed-jobs" element={<IndeedJobSearch />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
