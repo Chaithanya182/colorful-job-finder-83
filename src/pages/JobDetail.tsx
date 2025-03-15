@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useJobContext } from '@/context/JobContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
@@ -179,10 +179,12 @@ const JobDetail: React.FC = () => {
           </CardContent>
           
           <CardFooter className="flex flex-col sm:flex-row gap-4 pt-6">
-            <Button className="w-full sm:w-auto">
-              Apply Now
-              <ExternalLink size={16} />
-            </Button>
+            <Link to={`/job/${id}/apply`} className="w-full sm:w-auto">
+              <Button className="w-full sm:w-auto">
+                Apply Now
+                <ExternalLink size={16} />
+              </Button>
+            </Link>
             
             <Button variant="outline" className="w-full sm:w-auto">
               Share Job
