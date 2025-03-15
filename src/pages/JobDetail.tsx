@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Briefcase, MapPin, Calendar, DollarSign, Share2, ExternalLink, Building, Clock, Medal } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import AnimatedBackground from '@/components/AnimatedBackground';
+import { toast } from '@/components/ui/use-toast';
 
 const JobDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -68,6 +69,43 @@ const JobDetail: React.FC = () => {
     const diffMonths = Math.floor(diffDays / 30);
     if (diffMonths === 1) return '1 month ago';
     return `${diffMonths} months ago`;
+  };
+  
+  // Handle job sharing functionality
+  const handleShareJob = async () => {
+    const jobUrl = window.location.href;
+    const shareData = {
+      title: `Job Opportunity: ${title} at ${company}`,
+      text: `Check out this job opportunity: ${title} at ${company}`,
+      url: jobUrl
+    };
+    
+    try {
+      if (navigator.share) {
+        // Use Web Share API if available (mobile devices)
+        await navigator.share(shareData);
+        toast({
+          title: "Shared successfully",
+          description: "The job has been shared",
+        });
+      } else {
+        // Fallback to clipboard copy
+        await navigator.clipboard.writeText(
+          `${shareData.title}\n${shareData.text}\n${shareData.url}`
+        );
+        toast({
+          title: "Link copied to clipboard",
+          description: "You can now paste and share this job opportunity",
+        });
+      }
+    } catch (error) {
+      console.error("Error sharing:", error);
+      toast({
+        title: "Sharing failed",
+        description: "There was an error sharing this job",
+        variant: "destructive"
+      });
+    }
   };
   
   return (
@@ -182,13 +220,17 @@ const JobDetail: React.FC = () => {
             <Link to={`/job/${id}/apply`} className="w-full sm:w-auto">
               <Button className="w-full sm:w-auto">
                 Apply Now
-                <ExternalLink size={16} />
+                <ExternalLink size={16} className="ml-2" />
               </Button>
             </Link>
             
-            <Button variant="outline" className="w-full sm:w-auto">
+            <Button 
+              variant="outline" 
+              className="w-full sm:w-auto"
+              onClick={handleShareJob}
+            >
               Share Job
-              <Share2 size={16} />
+              <Share2 size={16} className="ml-2" />
             </Button>
           </CardFooter>
         </Card>
