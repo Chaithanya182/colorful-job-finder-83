@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -114,6 +113,10 @@ export default {
 				'scale-in': {
 					from: { transform: 'scale(0.95)', opacity: '0' },
 					to: { transform: 'scale(1)', opacity: '1' }
+				},
+				'theme-fade': {
+					'0%': { opacity: '0.5' },
+					'100%': { opacity: '1' }
 				}
 			},
 			animation: {
@@ -126,9 +129,13 @@ export default {
 				'pulse-soft': 'pulse-soft 3s infinite ease-in-out',
 				float: 'float 6s infinite ease-in-out',
 				'scale-in': 'scale-in 0.2s ease-out',
+				'theme-fade': 'theme-fade 0.5s ease-in-out',
 			},
 			backdropBlur: {
 				xs: '2px',
+			},
+			transitionProperty: {
+				'colors-transform': 'color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter',
 			}
 		}
 	},

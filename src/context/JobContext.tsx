@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { JobListing, getFilteredJobs } from '../utils/jobListings';
 import { toast } from '@/components/ui/use-toast';
@@ -60,12 +59,22 @@ export const JobProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     userProfile.email.trim() !== '' &&
     userProfile.skills.length > 0;
   
-  // Toggle dark mode
   const toggleDarkMode = () => {
-    setDarkMode(prev => !prev);
+    if (!darkMode) {
+      document.documentElement.classList.add('transitioning-to-dark');
+      setTimeout(() => {
+        setDarkMode(true);
+        document.documentElement.classList.remove('transitioning-to-dark');
+      }, 50);
+    } else {
+      document.documentElement.classList.add('transitioning-to-light');
+      setTimeout(() => {
+        setDarkMode(false);
+        document.documentElement.classList.remove('transitioning-to-light');
+      }, 50);
+    }
   };
   
-  // Apply dark mode class to document
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
@@ -74,7 +83,6 @@ export const JobProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, [darkMode]);
   
-  // Load profile and theme from localStorage on initial render
   useEffect(() => {
     const storedProfile = localStorage.getItem('userProfile');
     if (storedProfile) {
@@ -85,24 +93,20 @@ export const JobProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
     }
     
-    // Check user's preferred color scheme
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
       setDarkMode(true);
     }
     
-    // Check if user has previously set a theme preference
     const storedTheme = localStorage.getItem('theme');
     if (storedTheme) {
       setDarkMode(storedTheme === 'dark');
     }
   }, []);
   
-  // Save theme preference when it changes
   useEffect(() => {
     localStorage.setItem('theme', darkMode ? 'dark' : 'light');
   }, [darkMode]);
   
-  // Fetch jobs when user profile changes
   useEffect(() => {
     if (!userProfile || !userProfile.skills.length) return;
     
@@ -111,58 +115,55 @@ export const JobProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setLocationNotAvailable(false);
       
       try {
-        // First try to fetch from Indeed API
+        console.log("Attempting to fetch real-time job data...");
+        console.log("Note: In a production environment, API calls would be made through a secure backend.");
+        
         const indeedJobs = await fetchJobsFromIndeed(userProfile);
         if (indeedJobs.length > 0) {
           setFilteredJobs(indeedJobs);
-          
-          // Check if jobs are available in the user's preferred location
-          if (userProfile.preferredLocation) {
-            const jobsInPreferredLocation = indeedJobs.filter(job => 
-              job.location.toLowerCase().includes(userProfile.preferredLocation.toLowerCase()) || 
-              (job.isRemote && userProfile.preferredLocation.toLowerCase().includes('remote'))
-            );
-            
-            if (jobsInPreferredLocation.length === 0 && indeedJobs.length > 0) {
-              setLocationNotAvailable(true);
-            }
-          }
+          checkLocationAvailability(indeedJobs, userProfile.preferredLocation);
         } else {
-          // Fallback to local data
+          console.log("No jobs found from API or API call failed. Using local data instead.");
           fetchLocalJobs();
         }
       } catch (error) {
         console.error('Error fetching jobs:', error);
         toast({
-          title: "Couldn't connect to job service",
-          description: "Using local job data instead",
-          variant: "destructive"
+          title: "Using local job data",
+          description: "Real-time job data unavailable. For a production app, a secure backend would handle API requests.",
+          variant: "default"
         });
         
-        // Use local data as fallback
         fetchLocalJobs();
       } finally {
         setIsLoading(false);
       }
     };
     
+    const checkLocationAvailability = (jobs: JobListing[], preferredLocation?: string) => {
+      if (!preferredLocation) return;
+      
+      const jobsInPreferredLocation = jobs.filter(job => 
+        job.location.toLowerCase().includes(preferredLocation.toLowerCase()) || 
+        (job.isRemote && preferredLocation.toLowerCase().includes('remote'))
+      );
+      
+      if (jobsInPreferredLocation.length === 0 && jobs.length > 0) {
+        setLocationNotAvailable(true);
+      }
+    };
+    
     const fetchLocalJobs = () => {
-      // Get all jobs that match skills
       const allMatchingJobs = getFilteredJobs(
         userProfile.skills,
-        "",  // Empty string to get all jobs regardless of location
+        "",
         userProfile.yearsOfExperience
       );
       
-      // Check if jobs exist in the preferred location
       if (userProfile.preferredLocation) {
-        const jobsInPreferredLocation = allMatchingJobs.filter(job => 
-          job.location.toLowerCase().includes(userProfile.preferredLocation.toLowerCase()) || 
-          (job.isRemote && userProfile.preferredLocation.toLowerCase().includes('remote'))
-        );
+        checkLocationAvailability(allMatchingJobs, userProfile.preferredLocation);
         
-        if (jobsInPreferredLocation.length === 0 && allMatchingJobs.length > 0) {
-          setLocationNotAvailable(true);
+        if (locationNotAvailable) {
           setFilteredJobs(allMatchingJobs);
         } else {
           setFilteredJobs(getFilteredJobs(
@@ -179,15 +180,13 @@ export const JobProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (hasSubmittedForm) {
       fetchJobs();
     }
-  }, [userProfile, hasSubmittedForm]);
+  }, [userProfile, hasSubmittedForm, locationNotAvailable]);
   
   const setUserProfile = (profile: UserProfile) => {
     setUserProfileState(profile);
-    // Store in localStorage for persistence
     localStorage.setItem('userProfile', JSON.stringify(profile));
   };
   
-  // Function to fetch jobs from Indeed API
   const fetchJobsFromIndeed = async (profile: UserProfile): Promise<JobListing[]> => {
     try {
       const skillsQuery = profile.skills.join(' OR ');
@@ -206,16 +205,11 @@ export const JobProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       
       const data = await response.json();
       
-      // Transform Indeed data to our JobListing interface
       if (data && Array.isArray(data.results)) {
         return data.results.map((job: any, index: number) => {
-          // Extract skills from job description
           const description = job.snippet || '';
           const extractedSkills = extractSkillsFromDescription(description, profile.skills);
-          
-          // Calculate relevance
           const relevanceScore = calculateRelevanceScore(profile.skills, extractedSkills);
-          
           return {
             id: `indeed-${job.jobkey || index}`,
             title: job.jobtitle || 'Unknown Title',
@@ -239,19 +233,16 @@ export const JobProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
   
-  // Function to extract skills from job description
   const extractSkillsFromDescription = (description: string, userSkills: string[]): string[] => {
     const skills: string[] = [];
     const descLower = description.toLowerCase();
     
-    // Check if user skills are mentioned in description
     userSkills.forEach(skill => {
       if (descLower.includes(skill.toLowerCase())) {
         skills.push(skill);
       }
     });
     
-    // Add some common skills that might be in the description
     ['JavaScript', 'React', 'Node.js', 'Python', 'Java', 'SQL', 'AWS'].forEach(skill => {
       if (descLower.includes(skill.toLowerCase()) && !skills.includes(skill)) {
         skills.push(skill);
@@ -261,7 +252,6 @@ export const JobProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return skills.length > 0 ? skills : ['General'];
   };
   
-  // Calculate relevance score
   const calculateRelevanceScore = (userSkills: string[], jobSkills: string[]): number => {
     if (!userSkills.length || !jobSkills.length) return 0;
     
