@@ -112,7 +112,7 @@ export const getFilteredJobs = (
 ): JobListing[] => {
   if (!skills.length) return [];
   
-  return jobListings
+  const filteredJobs = jobListings
     .map(job => {
       // Calculate relevance score
       const relevanceScore = calculateRelevance(skills, job.requiredSkills);
@@ -135,6 +135,8 @@ export const getFilteredJobs = (
       
       return null;
     })
-    .filter(Boolean) as JobListing[]
-    .sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0));
+    .filter(Boolean) as JobListing[];
+    
+  // Sort by relevance score
+  return filteredJobs.sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0));
 };
