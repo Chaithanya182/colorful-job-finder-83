@@ -30,10 +30,10 @@ const JobListing: React.FC<JobListingProps> = ({ job, delay = 0 }) => {
   });
 
   const relevanceColor = isTopMatch 
-    ? 'bg-green-500' 
+    ? 'bg-green-500 dark:bg-purple-light' 
     : relevanceScore && relevanceScore >= 60 
-      ? 'bg-yellow-500' 
-      : 'bg-blue-500';
+      ? 'bg-yellow-500 dark:bg-purple' 
+      : 'bg-blue-500 dark:bg-purple-dark';
 
   return (
     <div 
@@ -47,13 +47,13 @@ const JobListing: React.FC<JobListingProps> = ({ job, delay = 0 }) => {
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-1">
             {isTopMatch && (
-              <Badge className="bg-green-500 text-white border-none px-2 py-0.5 text-xs font-medium flex items-center gap-1">
+              <Badge className="bg-green-500 dark:bg-purple-light text-white border-none px-2 py-0.5 text-xs font-medium flex items-center gap-1">
                 <Medal size={12} className="mr-1" />
                 Top Match
               </Badge>
             )}
             {isRemote && (
-              <Badge variant="outline" className="border-blue-200 text-blue-600 dark:border-blue-800 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 px-2 py-0.5 text-xs">
+              <Badge variant="outline" className="border-blue-200 text-blue-600 dark:border-purple/30 dark:text-purple-light bg-blue-50 dark:bg-purple/10 px-2 py-0.5 text-xs">
                 Remote
               </Badge>
             )}
@@ -94,7 +94,7 @@ const JobListing: React.FC<JobListingProps> = ({ job, delay = 0 }) => {
                 <Badge 
                   key={index} 
                   variant="outline" 
-                  className="bg-gray-100 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200"
+                  className="bg-gray-100 dark:bg-purple/20 border-gray-200 dark:border-purple/30 text-gray-800 dark:text-gray-200"
                 >
                   {skill}
                 </Badge>

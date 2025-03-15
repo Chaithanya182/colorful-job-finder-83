@@ -21,6 +21,7 @@ interface JobContextType {
   darkMode: boolean;
   toggleDarkMode: () => void;
   isLoading: boolean;
+  locationNotAvailable: boolean;
 }
 
 const defaultProfile: UserProfile = {
@@ -40,7 +41,8 @@ const JobContext = createContext<JobContextType>({
   setHasSubmittedForm: () => {},
   darkMode: false,
   toggleDarkMode: () => {},
-  isLoading: false
+  isLoading: false,
+  locationNotAvailable: false
 });
 
 export const useJobContext = () => useContext(JobContext);
@@ -51,6 +53,7 @@ export const JobProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [filteredJobs, setFilteredJobs] = useState<JobListing[]>([]);
   const [darkMode, setDarkMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [locationNotAvailable, setLocationNotAvailable] = useState(false);
   
   const isProfileComplete = !!userProfile && 
     userProfile.fullName.trim() !== '' && 
@@ -105,20 +108,28 @@ export const JobProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     
     const fetchJobs = async () => {
       setIsLoading(true);
+      setLocationNotAvailable(false);
       
       try {
         // First try to fetch from Indeed API
         const indeedJobs = await fetchJobsFromIndeed(userProfile);
         if (indeedJobs.length > 0) {
           setFilteredJobs(indeedJobs);
+          
+          // Check if jobs are available in the user's preferred location
+          if (userProfile.preferredLocation) {
+            const jobsInPreferredLocation = indeedJobs.filter(job => 
+              job.location.toLowerCase().includes(userProfile.preferredLocation.toLowerCase()) || 
+              (job.isRemote && userProfile.preferredLocation.toLowerCase().includes('remote'))
+            );
+            
+            if (jobsInPreferredLocation.length === 0 && indeedJobs.length > 0) {
+              setLocationNotAvailable(true);
+            }
+          }
         } else {
           // Fallback to local data
-          const localJobs = getFilteredJobs(
-            userProfile.skills,
-            userProfile.preferredLocation,
-            userProfile.yearsOfExperience
-          );
-          setFilteredJobs(localJobs);
+          fetchLocalJobs();
         }
       } catch (error) {
         console.error('Error fetching jobs:', error);
@@ -129,14 +140,39 @@ export const JobProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         });
         
         // Use local data as fallback
-        const localJobs = getFilteredJobs(
-          userProfile.skills,
-          userProfile.preferredLocation,
-          userProfile.yearsOfExperience
-        );
-        setFilteredJobs(localJobs);
+        fetchLocalJobs();
       } finally {
         setIsLoading(false);
+      }
+    };
+    
+    const fetchLocalJobs = () => {
+      // Get all jobs that match skills
+      const allMatchingJobs = getFilteredJobs(
+        userProfile.skills,
+        "",  // Empty string to get all jobs regardless of location
+        userProfile.yearsOfExperience
+      );
+      
+      // Check if jobs exist in the preferred location
+      if (userProfile.preferredLocation) {
+        const jobsInPreferredLocation = allMatchingJobs.filter(job => 
+          job.location.toLowerCase().includes(userProfile.preferredLocation.toLowerCase()) || 
+          (job.isRemote && userProfile.preferredLocation.toLowerCase().includes('remote'))
+        );
+        
+        if (jobsInPreferredLocation.length === 0 && allMatchingJobs.length > 0) {
+          setLocationNotAvailable(true);
+          setFilteredJobs(allMatchingJobs);
+        } else {
+          setFilteredJobs(getFilteredJobs(
+            userProfile.skills,
+            userProfile.preferredLocation,
+            userProfile.yearsOfExperience
+          ));
+        }
+      } else {
+        setFilteredJobs(allMatchingJobs);
       }
     };
     
@@ -249,7 +285,8 @@ export const JobProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setHasSubmittedForm,
         darkMode,
         toggleDarkMode,
-        isLoading
+        isLoading,
+        locationNotAvailable
       }}
     >
       {children}
