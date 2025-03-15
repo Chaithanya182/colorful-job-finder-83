@@ -6,10 +6,11 @@ import AnimatedBackground from '@/components/AnimatedBackground';
 import { useJobContext } from '@/context/JobContext';
 import { JobProvider } from '@/context/JobContext';
 import { Button } from '@/components/ui/button';
-import { Search, Briefcase, X } from 'lucide-react';
+import { Search, Briefcase, X, Moon, Sun, Loader2 } from 'lucide-react';
+import { Toggle } from '@/components/ui/toggle';
 
 const JobBoard: React.FC = () => {
-  const { userProfile, filteredJobs, hasSubmittedForm, setHasSubmittedForm } = useJobContext();
+  const { userProfile, filteredJobs, hasSubmittedForm, setHasSubmittedForm, darkMode, toggleDarkMode, isLoading } = useJobContext();
   const [showJobs, setShowJobs] = useState(false);
   
   useEffect(() => {
@@ -29,6 +30,21 @@ const JobBoard: React.FC = () => {
   
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 py-8 min-h-screen">
+      <div className="absolute top-4 right-4">
+        <Toggle 
+          pressed={darkMode}
+          onPressedChange={toggleDarkMode}
+          className="p-2 rounded-full bg-primary/10 hover:bg-primary/20"
+          aria-label="Toggle dark mode"
+        >
+          {darkMode ? (
+            <Sun className="h-5 w-5" />
+          ) : (
+            <Moon className="h-5 w-5" />
+          )}
+        </Toggle>
+      </div>
+      
       <div className="text-center mb-8">
         <div className="inline-flex items-center justify-center h-12 px-6 mb-4 rounded-full bg-blue-100 dark:bg-blue-900/30 animate-fade-in text-blue-600 dark:text-blue-400 text-sm font-medium">
           <Briefcase className="mr-2" size={16} />
@@ -57,7 +73,12 @@ const JobBoard: React.FC = () => {
           <div className="w-full animate-fade-in">
             <div className="flex justify-between items-center mb-6">
               <div className="font-medium">
-                {filteredJobs.length === 0 
+                {isLoading ? (
+                  <div className="flex items-center">
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Searching for jobs...
+                  </div>
+                ) : filteredJobs.length === 0 
                   ? "No jobs found matching your skills" 
                   : `Found ${filteredJobs.length} job${filteredJobs.length !== 1 ? 's' : ''} matching your skills`}
               </div>
@@ -72,7 +93,13 @@ const JobBoard: React.FC = () => {
               </Button>
             </div>
             
-            {filteredJobs.length === 0 ? (
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center py-20">
+                <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+                <p className="text-lg font-medium">Searching for matching jobs...</p>
+                <p className="text-muted-foreground">This may take a moment</p>
+              </div>
+            ) : filteredJobs.length === 0 ? (
               <div className="text-center py-12">
                 <div className="mx-auto w-24 h-24 mb-6 flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
                   <Search className="h-10 w-10 text-gray-400" />

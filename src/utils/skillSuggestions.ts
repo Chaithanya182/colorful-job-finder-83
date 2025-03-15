@@ -1,11 +1,14 @@
 
+import { toast } from "@/components/ui/use-toast";
+
 interface Skill {
   id: string;
   name: string;
   category?: string;
 }
 
-export const skillSuggestions: Skill[] = [
+// Backup local data in case API fails
+export const localSkillSuggestions: Skill[] = [
   { id: '1', name: 'React', category: 'Frontend' },
   { id: '2', name: 'TypeScript', category: 'Programming Language' },
   { id: '3', name: 'Node.js', category: 'Backend' },
@@ -33,11 +36,44 @@ export const skillSuggestions: Skill[] = [
   { id: '25', name: 'Project Management', category: 'Management' }
 ];
 
-export const searchSkills = (query: string): Skill[] => {
+export const searchSkills = async (query: string): Promise<Skill[]> => {
   if (!query || query.trim() === '') return [];
   
   const normalizedQuery = query.toLowerCase().trim();
-  return skillSuggestions
-    .filter(skill => skill.name.toLowerCase().includes(normalizedQuery))
-    .slice(0, 5);
+  
+  try {
+    // First try to fetch from O*NET API
+    const response = await fetch(`https://services.onetcenter.org/ws/online/search?keyword=${encodeURIComponent(normalizedQuery)}`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch skills from O*NET');
+    }
+    
+    const data = await response.json();
+    
+    // Transform O*NET data to our Skill interface
+    if (data && Array.isArray(data.occupation)) {
+      const skills = data.occupation.slice(0, 5).map((occ: any, index: number) => ({
+        id: `onet-${index}`,
+        name: occ.title,
+        category: occ.code
+      }));
+      
+      return skills;
+    }
+    
+    throw new Error('Invalid response from O*NET');
+  } catch (error) {
+    console.error('Error fetching skills from O*NET:', error);
+    
+    // Fallback to local data
+    return localSkillSuggestions
+      .filter(skill => skill.name.toLowerCase().includes(normalizedQuery))
+      .slice(0, 5);
+  }
 };
