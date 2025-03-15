@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import { JobListing, getFilteredJobs } from '../utils/jobListings';
+import { JobListing, getFilteredJobs, calculateRelevance } from '../utils/jobListings';
 import { toast } from '@/components/ui/use-toast';
 
 interface UserProfile {
