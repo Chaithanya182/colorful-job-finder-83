@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import ProfileForm from '@/components/ProfileForm';
 import JobListing from '@/components/JobListing';
@@ -24,7 +23,6 @@ const JobBoard: React.FC = () => {
   const [showJobs, setShowJobs] = useState(false);
   
   useEffect(() => {
-    // Show jobs with a slight delay after form submission for a smoother transition
     if (hasSubmittedForm) {
       const timer = setTimeout(() => {
         setShowJobs(true);
@@ -166,9 +164,7 @@ const Index: React.FC = () => {
   return (
     <>
       <AnimatedBackground />
-      <JobProvider>
-        <JobBoard />
-      </JobProvider>
+      <JobBoard />
     </>
   );
 };
