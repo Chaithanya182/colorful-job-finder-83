@@ -16,6 +16,13 @@ import { useJobContext } from '@/context/JobContext';
 import { searchSkills } from '@/utils/skillSuggestions';
 import { User, Mail, MapPin, Calendar, Search, X } from 'lucide-react';
 
+// Define the Skill interface to match the one from skillSuggestions.ts
+interface Skill {
+  id: string;
+  name: string;
+  category?: string;
+}
+
 const ProfileForm: React.FC = () => {
   const { setUserProfile, setHasSubmittedForm } = useJobContext();
   
@@ -26,7 +33,7 @@ const ProfileForm: React.FC = () => {
   const [yearsOfExperience, setYearsOfExperience] = useState(0);
   const [preferredLocation, setPreferredLocation] = useState('');
   
-  const [skillSuggestions, setSkillSuggestions] = useState<{id: string, name: string}[]>([]);
+  const [skillSuggestions, setSkillSuggestions] = useState<Skill[]>([]);
   const [isValid, setIsValid] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   
@@ -57,14 +64,29 @@ const ProfileForm: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
   
-  // Reset suggestions when skill input is empty
+  // Fetch skill suggestions when input changes
   useEffect(() => {
-    if (skillInput.trim() === '') {
-      setSkillSuggestions([]);
-    } else {
-      const results = searchSkills(skillInput);
-      setSkillSuggestions(results);
-    }
+    const fetchSkillSuggestions = async () => {
+      if (skillInput.trim() === '') {
+        setSkillSuggestions([]);
+        return;
+      }
+      
+      try {
+        const results = await searchSkills(skillInput);
+        setSkillSuggestions(results);
+      } catch (error) {
+        console.error('Error fetching skill suggestions:', error);
+        setSkillSuggestions([]);
+      }
+    };
+    
+    // Debounce the API call
+    const timer = setTimeout(() => {
+      fetchSkillSuggestions();
+    }, 300);
+    
+    return () => clearTimeout(timer);
   }, [skillInput]);
   
   const handleSkillInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -108,13 +130,6 @@ const ProfileForm: React.FC = () => {
     
     setUserProfile(userProfile);
     setHasSubmittedForm(true);
-    
-    // Optionally reset form
-    // setFullName('');
-    // setEmail('');
-    // setSkills([]);
-    // setYearsOfExperience(0);
-    // setPreferredLocation('');
   };
   
   const formFields = [
