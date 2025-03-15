@@ -161,16 +161,17 @@ export const JobProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       );
       
       if (userProfile.preferredLocation) {
-        checkLocationAvailability(allMatchingJobs, userProfile.preferredLocation);
+        const locationSpecificJobs = getFilteredJobs(
+          userProfile.skills,
+          userProfile.preferredLocation,
+          userProfile.yearsOfExperience
+        );
         
-        if (locationNotAvailable) {
+        if (locationSpecificJobs.length === 0 && allMatchingJobs.length > 0) {
+          setLocationNotAvailable(true);
           setFilteredJobs(allMatchingJobs);
         } else {
-          setFilteredJobs(getFilteredJobs(
-            userProfile.skills,
-            userProfile.preferredLocation,
-            userProfile.yearsOfExperience
-          ));
+          setFilteredJobs(locationSpecificJobs);
         }
       } else {
         setFilteredJobs(allMatchingJobs);
@@ -180,7 +181,7 @@ export const JobProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     if (hasSubmittedForm) {
       fetchJobs();
     }
-  }, [userProfile, hasSubmittedForm, locationNotAvailable]);
+  }, [userProfile, hasSubmittedForm]);
   
   const setUserProfile = (profile: UserProfile) => {
     setUserProfileState(profile);
@@ -253,15 +254,7 @@ export const JobProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
   
   const calculateRelevanceScore = (userSkills: string[], jobSkills: string[]): number => {
-    if (!userSkills.length || !jobSkills.length) return 0;
-    
-    const matchingSkills = jobSkills.filter(skill => 
-      userSkills.some(userSkill => 
-        userSkill.toLowerCase() === skill.toLowerCase()
-      )
-    ).length;
-    
-    return Math.round((matchingSkills / jobSkills.length) * 100);
+    return calculateRelevance(userSkills, jobSkills);
   };
   
   return (

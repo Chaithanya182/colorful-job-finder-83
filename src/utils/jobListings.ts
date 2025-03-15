@@ -85,24 +85,71 @@ export const jobListings: JobListing[] = [
     title: 'Data Scientist',
     company: 'DataAnalytics',
     location: 'Chicago, IL',
-    description: 'Analyze large datasets to extract insights and build machine learning models.',
+    description: 'Analyze large datasets to extract insights and build machine learning models using Python and related libraries.',
     requiredSkills: ['Python', 'Machine Learning', 'SQL', 'Data Analysis', 'Statistics'],
     salary: '$90,000 - $120,000',
     postedDate: '2023-07-20',
     isRemote: true
+  },
+  {
+    id: '8',
+    title: 'Python Developer',
+    company: 'CodeWizards',
+    location: 'Denver, CO',
+    description: 'Build backend services and data processing pipelines using Python and related frameworks.',
+    requiredSkills: ['Python', 'Django', 'Flask', 'SQL', 'API Development'],
+    salary: '$95,000 - $125,000',
+    postedDate: '2023-07-18',
+    isRemote: true
   }
 ];
+
+/**
+ * Calculate similarity between two strings
+ * Higher score (closer to 1) means more similar
+ */
+const calculateStringSimilarity = (str1: string, str2: string): number => {
+  const s1 = str1.toLowerCase();
+  const s2 = str2.toLowerCase();
+  
+  // Exact match
+  if (s1 === s2) return 1;
+  
+  // Check if one is contained within the other
+  if (s1.includes(s2) || s2.includes(s1)) {
+    const ratio = Math.min(s1.length, s2.length) / Math.max(s1.length, s2.length);
+    return 0.7 + (ratio * 0.3); // Base similarity of 0.7 plus some factor of length ratio
+  }
+  
+  // Calculate edit distance (simple version)
+  const maxDistance = Math.max(s1.length, s2.length);
+  if (maxDistance === 0) return 1;
+  
+  let distance = 0;
+  for (let i = 0; i < Math.min(s1.length, s2.length); i++) {
+    if (s1[i] !== s2[i]) distance++;
+  }
+  
+  distance += Math.abs(s1.length - s2.length); // Add remaining characters as distance
+  
+  return 1 - (distance / maxDistance);
+};
 
 export const calculateRelevance = (userSkills: string[], jobSkills: string[]): number => {
   if (!userSkills.length || !jobSkills.length) return 0;
   
-  const matchingSkills = jobSkills.filter(skill => 
-    userSkills.some(userSkill => 
-      userSkill.toLowerCase() === skill.toLowerCase()
-    )
-  ).length;
+  // For each job skill, find the best matching user skill and its similarity score
+  const matchScores = jobSkills.map(jobSkill => {
+    const scores = userSkills.map(userSkill => {
+      return calculateStringSimilarity(jobSkill, userSkill);
+    });
+    
+    return Math.max(...scores);
+  });
   
-  return Math.round((matchingSkills / jobSkills.length) * 100);
+  // Average of all match scores
+  const totalScore = matchScores.reduce((sum, score) => sum + score, 0);
+  return Math.round((totalScore / jobSkills.length) * 100);
 };
 
 export const getFilteredJobs = (
@@ -124,7 +171,7 @@ export const getFilteredJobs = (
         return null;
       }
 
-      // Return job with relevance score if at least one skill matches
+      // Return job with relevance score if there's any match
       if (relevanceScore > 0) {
         return {
           ...job,
