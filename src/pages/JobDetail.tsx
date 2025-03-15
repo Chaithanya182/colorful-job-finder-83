@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useJobContext } from '@/context/JobContext';
@@ -8,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Briefcase, MapPin, Calendar, DollarSign, Share2, ExternalLink, Building, Clock, Medal } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import AnimatedBackground from '@/components/AnimatedBackground';
-import { toast } from '@/components/ui/use-toast';
+import { toast } from '@/hooks/use-toast';
 
 const JobDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -71,41 +70,79 @@ const JobDetail: React.FC = () => {
     return `${diffMonths} months ago`;
   };
   
-  // Handle job sharing functionality
-  const handleShareJob = async () => {
+  // Handle job sharing functionality with improved error handling
+  const handleShareJob = () => {
     const jobUrl = window.location.href;
-    const shareData = {
-      title: `Job Opportunity: ${title} at ${company}`,
-      text: `Check out this job opportunity: ${title} at ${company}`,
-      url: jobUrl
-    };
+    const shareText = `Job Opportunity: ${title} at ${company}`;
+    const shareDescription = `Check out this job opportunity: ${title} at ${company}`;
+    
+    // Create share content
+    const shareContent = `${shareText}\n${shareDescription}\n${jobUrl}`;
+    
+    // Check if Web Share API is available AND we're in a secure context
+    if (navigator.share && window.isSecureContext) {
+      try {
+        navigator.share({
+          title: shareText,
+          text: shareDescription,
+          url: jobUrl
+        })
+        .then(() => {
+          toast({
+            title: "Shared successfully",
+            description: "The job has been shared",
+          });
+        })
+        .catch(error => {
+          console.error("Share error:", error);
+          // Fall back to clipboard if share fails
+          copyToClipboard(shareContent);
+        });
+      } catch (error) {
+        console.error("Share attempt error:", error);
+        // Fall back to clipboard
+        copyToClipboard(shareContent);
+      }
+    } else {
+      // Web Share API not available, use clipboard
+      copyToClipboard(shareContent);
+    }
+  };
+  
+  // Helper function to copy to clipboard
+  const copyToClipboard = (text: string) => {
+    // Create a temporary textarea element to copy from
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'absolute';
+    textarea.style.left = '-9999px';
+    document.body.appendChild(textarea);
+    
+    // Select and copy the text
+    textarea.select();
     
     try {
-      if (navigator.share) {
-        // Use Web Share API if available (mobile devices)
-        await navigator.share(shareData);
-        toast({
-          title: "Shared successfully",
-          description: "The job has been shared",
-        });
-      } else {
-        // Fallback to clipboard copy
-        await navigator.clipboard.writeText(
-          `${shareData.title}\n${shareData.text}\n${shareData.url}`
-        );
+      const successful = document.execCommand('copy');
+      if (successful) {
         toast({
           title: "Link copied to clipboard",
           description: "You can now paste and share this job opportunity",
         });
+      } else {
+        throw new Error('Copy command failed');
       }
-    } catch (error) {
-      console.error("Error sharing:", error);
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
       toast({
-        title: "Sharing failed",
-        description: "There was an error sharing this job",
+        title: "Couldn't copy to clipboard",
+        description: "Please manually copy the URL from the address bar",
         variant: "destructive"
       });
     }
+    
+    // Clean up
+    document.body.removeChild(textarea);
   };
   
   return (
