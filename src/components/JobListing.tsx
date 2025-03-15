@@ -1,8 +1,10 @@
 
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { JobListing as JobListingType } from '../utils/jobListings';
 import { Badge } from '@/components/ui/badge';
-import { Briefcase, MapPin, Calendar, DollarSign, Medal } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Briefcase, MapPin, Calendar, DollarSign, Medal, ArrowRight } from 'lucide-react';
 
 interface JobListingProps {
   job: JobListingType;
@@ -11,6 +13,7 @@ interface JobListingProps {
 
 const JobListing: React.FC<JobListingProps> = ({ job, delay = 0 }) => {
   const { 
+    id,
     title, 
     company, 
     location, 
@@ -34,6 +37,11 @@ const JobListing: React.FC<JobListingProps> = ({ job, delay = 0 }) => {
     : relevanceScore && relevanceScore >= 60 
       ? 'bg-yellow-500 dark:bg-purple' 
       : 'bg-blue-500 dark:bg-purple-dark';
+
+  // Truncate description if it's too long
+  const truncatedDescription = description.length > 150 
+    ? `${description.substring(0, 150)}...` 
+    : description;
 
   return (
     <div 
@@ -85,9 +93,9 @@ const JobListing: React.FC<JobListingProps> = ({ job, delay = 0 }) => {
             </div>
           </div>
           
-          <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">{description}</p>
+          <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">{truncatedDescription}</p>
           
-          <div className="mt-3">
+          <div className="mt-3 mb-4">
             <div className="text-sm font-medium mb-2">Required Skills:</div>
             <div className="flex flex-wrap gap-1">
               {requiredSkills.map((skill, index) => (
@@ -100,6 +108,15 @@ const JobListing: React.FC<JobListingProps> = ({ job, delay = 0 }) => {
                 </Badge>
               ))}
             </div>
+          </div>
+          
+          <div className="mt-4">
+            <Link to={`/job/${id}`}>
+              <Button variant="outline" className="text-sm group">
+                View Details
+                <ArrowRight size={16} className="ml-1 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </Link>
           </div>
         </div>
         
